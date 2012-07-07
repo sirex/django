@@ -5,8 +5,8 @@ from django.core.mail import send_mail
 from django.db import models
 from django.db.models.manager import EmptyManager
 from django.utils.encoding import smart_str
-from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _, ungettext_lazy
 
 from django.contrib import auth
 from django.contrib.auth.signals import user_logged_in
@@ -54,8 +54,6 @@ class Permission(models.Model):
     objects = PermissionManager()
 
     class Meta:
-        verbose_name = _('permission')
-        verbose_name_plural = _('permissions')
         unique_together = (('content_type', 'codename'),)
         ordering = ('content_type__app_label', 'content_type__model', 'codename')
 
@@ -69,6 +67,10 @@ class Permission(models.Model):
         return (self.codename,) + self.content_type.natural_key()
     natural_key.dependencies = ['contenttypes.contenttype']
 
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('permission', 'permissions', count)
+
 class Group(models.Model):
     """Groups are a generic way of categorizing users to apply permissions, or some other label, to those users. A user can belong to any number of groups.
 
@@ -79,12 +81,12 @@ class Group(models.Model):
     name = models.CharField(_('name'), max_length=80, unique=True)
     permissions = models.ManyToManyField(Permission, verbose_name=_('permissions'), blank=True)
 
-    class Meta:
-        verbose_name = _('group')
-        verbose_name_plural = _('groups')
-
     def __unicode__(self):
         return self.name
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('group', 'groups', count)
 
 class UserManager(models.Manager):
     def create_user(self, username, email=None, password=None):
@@ -187,10 +189,6 @@ class User(models.Model):
         help_text=_("In addition to the permissions manually assigned, this user will also get all permissions granted to each group he/she is in."))
     user_permissions = models.ManyToManyField(Permission, verbose_name=_('user permissions'), blank=True)
     objects = UserManager()
-
-    class Meta:
-        verbose_name = _('user')
-        verbose_name_plural = _('users')
 
     def __unicode__(self):
         return self.username
@@ -336,6 +334,10 @@ class User(models.Model):
             except (ImportError, ImproperlyConfigured):
                 raise SiteProfileNotAvailable
         return self._profile_cache
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('user', 'users', count)
 
 
 class AnonymousUser(object):

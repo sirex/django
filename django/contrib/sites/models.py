@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, ungettext_lazy
 
 
 SITE_CACHE = {}
@@ -40,8 +40,6 @@ class Site(models.Model):
 
     class Meta:
         db_table = 'django_site'
-        verbose_name = _('site')
-        verbose_name_plural = _('sites')
         ordering = ('domain',)
 
     def __unicode__(self):
@@ -60,6 +58,10 @@ class Site(models.Model):
             del SITE_CACHE[pk]
         except KeyError:
             pass
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('site', 'sites', count)
 
 
 class RequestSite(object):

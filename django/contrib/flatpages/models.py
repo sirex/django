@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.sites.models import Site
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, ungettext_lazy
 
 
 class FlatPage(models.Model):
@@ -15,8 +15,6 @@ class FlatPage(models.Model):
 
     class Meta:
         db_table = 'django_flatpage'
-        verbose_name = _('flat page')
-        verbose_name_plural = _('flat pages')
         ordering = ('url',)
 
     def __unicode__(self):
@@ -24,3 +22,7 @@ class FlatPage(models.Model):
 
     def get_absolute_url(self):
         return self.url
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('flat page', 'flat pages', count)

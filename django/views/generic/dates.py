@@ -196,7 +196,7 @@ class BaseDateListView(MultipleObjectMixin, DateMixin, View):
 
         if not allow_empty and not qs:
             raise Http404(_(u"No %(verbose_name_plural)s available") % {
-                    'verbose_name_plural': force_unicode(qs.model._meta.verbose_name_plural)
+                    'verbose_name_plural': force_unicode(qs.model._meta.get_verbose_name(0))
             })
 
         return qs
@@ -465,7 +465,7 @@ class BaseDateDetailView(YearMixin, MonthMixin, DayMixin, DateMixin, BaseDetailV
 
         if not self.get_allow_future() and date > datetime.date.today():
             raise Http404(_(u"Future %(verbose_name_plural)s not available because %(class_name)s.allow_future is False.") % {
-                'verbose_name_plural': qs.model._meta.verbose_name_plural,
+                'verbose_name_plural': qs.model._meta.get_verbose_name(0),
                 'class_name': self.__class__.__name__,
             })
 

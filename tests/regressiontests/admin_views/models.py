@@ -63,9 +63,10 @@ class Chapter(models.Model):
     def __unicode__(self):
         return self.title
 
-    class Meta:
+    @classmethod
+    def verbose_names(cls, count=1):
         # Use a utf-8 bytestring to ensure it works (see #11710)
-        verbose_name = '¿Chapter?'
+        return '¿Chapter?'
 
 
 class ChapterXtra1(models.Model):
@@ -538,13 +539,13 @@ class ComplexSortedPerson(models.Model):
     age = models.PositiveIntegerField()
     is_employee = models.NullBooleanField()
 
-class PrePopulatedPostLargeSlug(models.Model): 
-    """ 
-    Regression test for #15938: a large max_length for the slugfield must not 
-    be localized in prepopulated_fields_js.html or it might end up breaking 
-    the javascript (ie, using THOUSAND_SEPARATOR ends up with maxLength=1,000) 
-    """ 
-    title = models.CharField(max_length=100) 
-    published = models.BooleanField() 
+class PrePopulatedPostLargeSlug(models.Model):
+    """
+    Regression test for #15938: a large max_length for the slugfield must not
+    be localized in prepopulated_fields_js.html or it might end up breaking
+    the javascript (ie, using THOUSAND_SEPARATOR ends up with maxLength=1,000)
+    """
+    title = models.CharField(max_length=100)
+    published = models.BooleanField()
     slug = models.SlugField(max_length=1000)
-    
+

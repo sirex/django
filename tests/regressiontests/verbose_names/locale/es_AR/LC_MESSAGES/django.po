@@ -1,0 +1,41 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-11-27 12:11-0600\n"
+"PO-Revision-Date: 2011-11-27 15:00-0300\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+
+msgid "Translatable legacy model #1"
+msgstr "Modelo legado traducible #1"
+
+msgid "Translatable legacy model #2"
+msgstr "Modelo legado traducible #2"
+
+msgid "Translatable legacy models #2"
+msgstr "Modelos legados traducibles #2"
+
+msgid "Translatable legacy models #3"
+msgstr "Modelos legados traducibles #3"
+
+msgid "Translatable New-style model #1"
+msgstr "Modelo moderno traducible #1"
+
+msgid "Translatable New-style model #2"
+msgid_plural "Translatable New-style models #2"
+msgstr[0] "Modelo moderno traducible #2"
+msgstr[1] "Modelos modernos traducibles #2"
+
+msgid "Translatable New-style models #3"
+msgstr "Modelos modernos traducibles #3"

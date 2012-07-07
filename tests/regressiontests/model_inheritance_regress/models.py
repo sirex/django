@@ -108,7 +108,10 @@ class AuditBase(models.Model):
 
     class Meta:
         abstract = True
-        verbose_name_plural = u'Audits'
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return u'Audits'
 
 class CertificationAudit(AuditBase):
     class Meta(AuditBase.Meta):

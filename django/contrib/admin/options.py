@@ -609,7 +609,7 @@ class ModelAdmin(BaseModelAdmin):
         """
         choices = [] + default_choices
         for func, name, description in self.get_actions(request).itervalues():
-            choice = (name, description % model_format_dict(self.opts))
+            choice = (name, description % model_format_dict(self.model))
             choices.append(choice)
         return choices
 
@@ -674,16 +674,16 @@ class ModelAdmin(BaseModelAdmin):
             for formset in formsets:
                 for added_object in formset.new_objects:
                     change_message.append(_('Added %(name)s "%(object)s".')
-                                          % {'name': force_unicode(added_object._meta.verbose_name),
+                                          % {'name': force_unicode(added_object._meta.get_verbose_name()),
                                              'object': force_unicode(added_object)})
                 for changed_object, changed_fields in formset.changed_objects:
                     change_message.append(_('Changed %(list)s for %(name)s "%(object)s".')
                                           % {'list': get_text_list(changed_fields, _('and')),
-                                             'name': force_unicode(changed_object._meta.verbose_name),
+                                             'name': force_unicode(changed_object._meta.get_verbose_name()),
                                              'object': force_unicode(changed_object)})
                 for deleted_object in formset.deleted_objects:
                     change_message.append(_('Deleted %(name)s "%(object)s".')
-                                          % {'name': force_unicode(deleted_object._meta.verbose_name),
+                                          % {'name': force_unicode(deleted_object._meta.get_verbose_name()),
                                              'object': force_unicode(deleted_object)})
         change_message = ' '.join(change_message)
         return change_message or _('No fields changed.')
@@ -769,7 +769,7 @@ class ModelAdmin(BaseModelAdmin):
         opts = obj._meta
         pk_value = obj._get_pk_val()
 
-        msg = _('The %(name)s "%(obj)s" was added successfully.') % {'name': force_unicode(opts.verbose_name), 'obj': force_unicode(obj)}
+        msg = _('The %(name)s "%(obj)s" was added successfully.') % {'name': force_unicode(opts.get_verbose_name()), 'obj': force_unicode(obj)}
         # Here, we distinguish between different save types by checking for
         # the presence of keys in request.POST.
         if "_continue" in request.POST:
@@ -785,7 +785,7 @@ class ModelAdmin(BaseModelAdmin):
                 # escape() calls force_unicode.
                 (escape(pk_value), escapejs(obj)))
         elif "_addanother" in request.POST:
-            self.message_user(request, msg + ' ' + (_("You may add another %s below.") % force_unicode(opts.verbose_name)))
+            self.message_user(request, msg + ' ' + (_("You may add another %s below.") % force_unicode(opts.get_verbose_name())))
             return HttpResponseRedirect(request.path)
         else:
             self.message_user(request, msg)
@@ -810,11 +810,11 @@ class ModelAdmin(BaseModelAdmin):
 
         # Handle proxy models automatically created by .only() or .defer().
         # Refs #14529
-        verbose_name = opts.verbose_name
+        verbose_name = opts.get_verbose_name()
         module_name = opts.module_name
         if obj._deferred:
             opts_ = opts.proxy_for_model._meta
-            verbose_name = opts_.verbose_name
+            verbose_name = opts_.get_verbose_name()
             module_name = opts_.module_name
 
         pk_value = obj._get_pk_val()
@@ -995,7 +995,7 @@ class ModelAdmin(BaseModelAdmin):
             media = media + inline_admin_formset.media
 
         context = {
-            'title': _('Add %s') % force_unicode(opts.verbose_name),
+            'title': _('Add %s') % force_unicode(opts.get_verbose_name()),
             'adminform': adminForm,
             'is_popup': "_popup" in request.REQUEST,
             'show_delete': False,
@@ -1020,7 +1020,7 @@ class ModelAdmin(BaseModelAdmin):
             raise PermissionDenied
 
         if obj is None:
-            raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_unicode(opts.verbose_name), 'key': escape(object_id)})
+            raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_unicode(opts.get_verbose_name()), 'key': escape(object_id)})
 
         if request.method == 'POST' and "_saveasnew" in request.POST:
             return self.add_view(request, form_url=reverse('admin:%s_%s_add' %
@@ -1086,7 +1086,7 @@ class ModelAdmin(BaseModelAdmin):
             media = media + inline_admin_formset.media
 
         context = {
-            'title': _('Change %s') % force_unicode(opts.verbose_name),
+            'title': _('Change %s') % force_unicode(opts.get_verbose_name()),
             'adminform': adminForm,
             'object_id': object_id,
             'original': obj,
@@ -1194,15 +1194,11 @@ class ModelAdmin(BaseModelAdmin):
                         changecount += 1
 
                 if changecount:
-                    if changecount == 1:
-                        name = force_unicode(opts.verbose_name)
-                    else:
-                        name = force_unicode(opts.verbose_name_plural)
+                    name = force_unicode(opts.get_verbose_name(changecount))
                     msg = ungettext("%(count)s %(name)s was changed successfully.",
                                     "%(count)s %(name)s were changed successfully.",
                                     changecount) % {'count': changecount,
-                                                    'name': name,
-                                                    'obj': force_unicode(obj)}
+                                                    'name': name}
                     self.message_user(request, msg)
 
                 return HttpResponseRedirect(request.get_full_path())
@@ -1229,7 +1225,7 @@ class ModelAdmin(BaseModelAdmin):
             'All %(total_count)s selected', cl.result_count)
 
         context = {
-            'module_name': force_unicode(opts.verbose_name_plural),
+            'module_name': force_unicode(opts.get_verbose_name(0)),
             'selection_note': _('0 of %(cnt)s selected') % {'cnt': len(cl.result_list)},
             'selection_note_all': selection_note_all % {'total_count': cl.result_count},
             'title': cl.title,
@@ -1255,7 +1251,8 @@ class ModelAdmin(BaseModelAdmin):
     @transaction.commit_on_success
     def delete_view(self, request, object_id, extra_context=None):
         "The 'delete' admin view for this model."
-        opts = self.model._meta
+        model = self.model
+        opts = model._meta
         app_label = opts.app_label
 
         obj = self.get_object(request, unquote(object_id))
@@ -1264,9 +1261,9 @@ class ModelAdmin(BaseModelAdmin):
             raise PermissionDenied
 
         if obj is None:
-            raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_unicode(opts.verbose_name), 'key': escape(object_id)})
+            raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_unicode(opts.get_verbose_name()), 'key': escape(object_id)})
 
-        using = router.db_for_write(self.model)
+        using = router.db_for_write(model)
 
         # Populate deleted_objects, a data structure of all related objects that
         # will also be deleted.
@@ -1280,7 +1277,7 @@ class ModelAdmin(BaseModelAdmin):
             self.log_deletion(request, obj, obj_display)
             self.delete_model(request, obj)
 
-            self.message_user(request, _('The %(name)s "%(obj)s" was deleted successfully.') % {'name': force_unicode(opts.verbose_name), 'obj': force_unicode(obj_display)})
+            self.message_user(request, _('The %(name)s "%(obj)s" was deleted successfully.') % {'name': force_unicode(opts.get_verbose_name()), 'obj': force_unicode(obj_display)})
 
             if not self.has_change_permission(request, None):
                 return HttpResponseRedirect(reverse('admin:index',
@@ -1289,7 +1286,7 @@ class ModelAdmin(BaseModelAdmin):
                                         (opts.app_label, opts.module_name),
                                         current_app=self.admin_site.name))
 
-        object_name = force_unicode(opts.verbose_name)
+        object_name = force_unicode(opts.get_verbose_name())
 
         if perms_needed or protected:
             title = _("Cannot delete %(name)s") % {"name": object_name}
@@ -1329,7 +1326,7 @@ class ModelAdmin(BaseModelAdmin):
         context = {
             'title': _('Change history: %s') % force_unicode(obj),
             'action_list': action_list,
-            'module_name': capfirst(force_unicode(opts.verbose_name_plural)),
+            'module_name': capfirst(force_unicode(opts.get_verbose_name(0))),
             'object': obj,
             'app_label': app_label,
             'opts': opts,
@@ -1365,9 +1362,9 @@ class InlineModelAdmin(BaseModelAdmin):
         self.opts = self.model._meta
         super(InlineModelAdmin, self).__init__()
         if self.verbose_name is None:
-            self.verbose_name = self.model._meta.verbose_name
+            self.verbose_name = self.model._meta.get_verbose_name()
         if self.verbose_name_plural is None:
-            self.verbose_name_plural = self.model._meta.verbose_name_plural
+            self.verbose_name_plural = self.model._meta.get_verbose_name(0)
 
     @property
     def media(self):

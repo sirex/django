@@ -540,11 +540,105 @@ of the view name::
 More details on named URL patterns are in the :doc:`URL dispatch documentation
 </topics/http/urls>`.
 
+``verbose_names``
+-----------------
+
+.. classmethod:: Model.verbose_names(count=1)
+
+.. versionadded:: 1.4
+
+A Python classmethod.
+
+This method has no default implementation and you might provide one depending
+on the the human readable name you need for your model.
+
+The *count* argument is the quantity of model instances the verbose name is
+being requested for.
+
+It provides a straight migration path from the :attr:`~Options.verbose_name` and
+:attr:`~Options.verbose_name_plural` options that entered a deprecation cycle
+starting with Django 1.4.  For example this model declaration::
+
+    class SSN(models.Model):
+        value = models.CharField(max_length=11)
+
+        class Meta:
+            verbose_name = 'social security number'
+
+needs to be changed to::
+
+    class SSN(models.Model):
+        value = models.CharField(max_length=11)
+
+        @classmethod
+        def verbose_names(cls, count=1):
+            return 'social security number'
+
+and this one::
+
+    class SecurityPolicy(models.Model):
+        title = models.CharField(max_length=30)
+
+        class Meta:
+            verbose_name_plural = 'security policies'
+
+should be changed to::
+
+    class SecurityPolicy(models.Model):
+        title = models.CharField(max_length=30)
+
+        @classmethod
+        def verbose_names(cls, count=1):
+            if count != 1:
+                return 'security policies'
+
+This new syntax can take in account the number of model instances at play to
+decide the exact verbose name to show in user interaction contexts. It provides
+for better internationalization of your application because the name of your
+model is now translatable in a more correct way to many more locales::
+
+    from django.utils.translation import ugettext_lazy
+
+    class Man(models.Model):
+        first_name = models.CharField(max_length=30)
+
+        @classmethod
+        def verbose_names(cls, count=1):
+            if count == 1:
+                return ugettext_lazy('man')
+            else:
+                return ugettext_lazy('men')
+
+Although you usually will use the
+:func:`~django.utils.translation.ungettext_lazy` function::
+
+    from django.utils.translation import ungettext_lazy
+
+    class Library(models.Model):
+        city_name = models.CharField(max_length=30)
+
+        @classmethod
+        def verbose_names(cls, count=1):
+            return ungetttext_lazy('llbrary', 'libraries', count)
+
+.. note::
+    Remember to declare this method as a classmethod::
+
+        class MyModel(models.Model):
+            ...
+
+            @classmethod
+            def verbose_names(cls, count=1):
+                ...
+
 Extra instance methods
 ======================
 
 In addition to :meth:`~Model.save()`, :meth:`~Model.delete()`, a model object
 might have some of the following methods:
+
+``get_*_display``
+-----------------
 
 .. method:: Model.get_FOO_display()
 
@@ -570,6 +664,9 @@ example, in the following model::
     >>> p.get_gender_display()
     'Male'
 
+``get_next_by_*`` and ``get_prev_by_*``
+---------------------------------------
+
 .. method:: Model.get_next_by_FOO(\**kwargs)
 .. method:: Model.get_previous_by_FOO(\**kwargs)
 
@@ -586,4 +683,3 @@ described in :ref:`Field lookups <field-lookups>`.
 Note that in the case of identical date values, these methods will use the
 primary key as a tie-breaker. This guarantees that no records are skipped or
 duplicated. That also means you cannot use those methods on unsaved objects.
-

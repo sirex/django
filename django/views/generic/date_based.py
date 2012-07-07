@@ -35,7 +35,7 @@ def archive_index(request, queryset, date_field, num_latest=15,
         queryset = queryset.filter(**{'%s__lte' % date_field: timezone.now()})
     date_list = queryset.dates(date_field, 'year')[::-1]
     if not date_list and not allow_empty:
-        raise Http404("No %s available" % model._meta.verbose_name)
+        raise Http404("No %s available" % model._meta.get_verbose_name())
 
     if date_list and num_latest:
         latest = queryset.order_by('-'+date_field)[:num_latest]
@@ -355,7 +355,7 @@ def object_detail(request, year, month, day, queryset, date_field,
     try:
         obj = queryset.get(**lookup_kwargs)
     except ObjectDoesNotExist:
-        raise Http404("No %s found for" % model._meta.verbose_name)
+        raise Http404("No %s found for" % model._meta.get_verbose_name())
     if not template_name:
         template_name = "%s/%s_detail.html" % (model._meta.app_label, model._meta.object_name.lower())
     if template_name_field:

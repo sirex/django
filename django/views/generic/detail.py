@@ -49,7 +49,7 @@ class SingleObjectMixin(object):
             obj = queryset.get()
         except ObjectDoesNotExist:
             raise Http404(_(u"No %(verbose_name)s found matching the query") %
-                          {'verbose_name': queryset.model._meta.verbose_name})
+                          {'verbose_name': queryset.model._meta.get_verbose_name()})
         return obj
 
     def get_queryset(self):

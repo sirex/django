@@ -341,7 +341,7 @@ class AdminSite(object):
                 if True in perms.values():
                     info = (app_label, model._meta.module_name)
                     model_dict = {
-                        'name': capfirst(model._meta.verbose_name_plural),
+                        'name': capfirst(model._meta.get_verbose_name(0)),
                         'admin_url': reverse('admin:%s_%s_changelist' % info, current_app=self.name),
                         'add_url': reverse('admin:%s_%s_add' % info, current_app=self.name),
                         'perms': perms,
@@ -387,7 +387,7 @@ class AdminSite(object):
                     if True in perms.values():
                         info = (app_label, model._meta.module_name)
                         model_dict = {
-                            'name': capfirst(model._meta.verbose_name_plural),
+                            'name': capfirst(model._meta.get_verbose_name(0)),
                             'admin_url': reverse('admin:%s_%s_changelist' % info, current_app=self.name),
                             'add_url': reverse('admin:%s_%s_add' % info, current_app=self.name),
                             'perms': perms,

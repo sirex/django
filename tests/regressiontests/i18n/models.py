@@ -13,5 +13,6 @@ class Company(models.Model):
     cents_payed = models.DecimalField(max_digits=4, decimal_places=2)
     products_delivered = models.IntegerField()
 
-    class Meta:
-        verbose_name = _('Company')
+    @classmethod
+    def verbose_names(cls, count=1):
+        return _('Company')

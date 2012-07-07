@@ -131,7 +131,7 @@ def object_detail(request, queryset, object_id=None, slug=None,
     try:
         obj = queryset.get()
     except ObjectDoesNotExist:
-        raise Http404("No %s found matching the query" % (model._meta.verbose_name))
+        raise Http404("No %s found matching the query" % (model._meta.get_verbose_name()))
     if not template_name:
         template_name = "%s/%s_detail.html" % (model._meta.app_label, model._meta.object_name.lower())
     if template_name_field:

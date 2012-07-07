@@ -1,13 +1,11 @@
 from django.db import models
-
+from django.utils.translation import ungettext_lazy
 
 class Artist(models.Model):
     name = models.CharField(max_length=100)
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'professional artist'
-        verbose_name_plural = 'professional artists'
 
     def __unicode__(self):
         return self.name
@@ -15,6 +13,10 @@ class Artist(models.Model):
     @models.permalink
     def get_absolute_url(self):
         return ('artist_detail', (), {'pk': self.id})
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('professional artist', 'professional artists', count)
 
 class Author(models.Model):
     name = models.CharField(max_length=100)

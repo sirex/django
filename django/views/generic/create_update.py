@@ -95,7 +95,7 @@ def lookup_object(model, object_id, slug, slug_field):
         return model.objects.get(**lookup_kwargs)
     except ObjectDoesNotExist:
         raise Http404("No %s found for %s"
-                      % (model._meta.verbose_name, lookup_kwargs))
+                      % (model._meta.get_verbose_name(), lookup_kwargs))
 
 def create_object(request, model=None, template_name=None,
         template_loader=loader, extra_context=None, post_save_redirect=None,
@@ -119,7 +119,7 @@ def create_object(request, model=None, template_name=None,
             new_object = form.save()
 
             msg = ugettext("The %(verbose_name)s was created successfully.") %\
-                                    {"verbose_name": model._meta.verbose_name}
+                                    {"verbose_name": model._meta.get_verbose_name()}
             messages.success(request, msg, fail_silently=True)
             return redirect(post_save_redirect, new_object)
     else:
@@ -162,7 +162,7 @@ def update_object(request, model=None, object_id=None, slug=None,
         if form.is_valid():
             obj = form.save()
             msg = ugettext("The %(verbose_name)s was updated successfully.") %\
-                                    {"verbose_name": model._meta.verbose_name}
+                                    {"verbose_name": model._meta.get_verbose_name()}
             messages.success(request, msg, fail_silently=True)
             return redirect(post_save_redirect, obj)
     else:
@@ -205,7 +205,7 @@ def delete_object(request, model, post_delete_redirect, object_id=None,
     if request.method == 'POST':
         obj.delete()
         msg = ugettext("The %(verbose_name)s was deleted.") %\
-                                    {"verbose_name": model._meta.verbose_name}
+                                    {"verbose_name": model._meta.get_verbose_name()}
         messages.success(request, msg, fail_silently=True)
         return HttpResponseRedirect(post_delete_redirect)
     else:

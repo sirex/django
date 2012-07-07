@@ -1,30 +1,34 @@
-import re
 from bisect import bisect
+import re
+import warnings
 
 from django.conf import settings
-from django.db.models.related import RelatedObject
 from django.db.models.fields.related import ManyToManyRel
 from django.db.models.fields import AutoField, FieldDoesNotExist
 from django.db.models.fields.proxy import OrderWrt
 from django.db.models.loading import get_models, app_cache_ready
-from django.utils.translation import activate, deactivate_all, get_language, string_concat
-from django.utils.encoding import force_unicode, smart_str
+from django.db.models.related import RelatedObject
 from django.utils.datastructures import SortedDict
+from django.utils.encoding import force_unicode, smart_str
+from django.utils.functional import cached_property
+from django.utils.translation import activate, deactivate_all, get_language, string_concat
 
-# Calculate the verbose_name by converting from InitialCaps to "lowercase with spaces".
-get_verbose_name = lambda class_name: re.sub('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', ' \\1', class_name).lower().strip()
-
-DEFAULT_NAMES = ('verbose_name', 'verbose_name_plural', 'db_table', 'ordering',
+DEFAULT_NAMES = ('db_table', 'ordering',
                  'unique_together', 'permissions', 'get_latest_by',
                  'order_with_respect_to', 'app_label', 'db_tablespace',
                  'abstract', 'managed', 'proxy', 'auto_created')
+
+DEPRECATED_NAMES = ('verbose_name', 'verbose_name_plural')
+
+CAMEL_CASE_RE = re.compile('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))')
 
 class Options(object):
     def __init__(self, meta, app_label=None):
         self.local_fields, self.local_many_to_many = [], []
         self.virtual_fields = []
-        self.module_name, self.verbose_name = None, None
-        self.verbose_name_plural = None
+        self.cls = None
+        self.module_name, self._verbose_name = None, None
+        self._verbose_name_plural = None
         self.db_table = ''
         self.ordering = []
         self.unique_together =  []
@@ -54,16 +58,34 @@ class Options(object):
         # from *other* models. Needed for some admin checks. Internal use only.
         self.related_fkey_lookups = []
 
+    def _get_verbose_name(self):
+        warnings.warn("Meta.verbose_name is deprecated. Use a verbose_names()"
+            " classmethod in the model instead.", PendingDeprecationWarning)
+        return self._verbose_name
+    def _set_verbose_name(self, value):
+        self._verbose_name = value
+    verbose_name = property(_get_verbose_name, _set_verbose_name)
+
+    def _get_verbose_name_plural(self):
+        warnings.warn("Meta.verbose_name_plural is deprecated. Use a "
+            "verbose_names() classmethod in the model instead.",
+            PendingDeprecationWarning)
+        return self._verbose_name_plural
+    def _set_verbose_name_plural(self, value):
+        self._verbose_name_plural = value
+    verbose_name_plural = property(_get_verbose_name_plural, _set_verbose_name_plural)
+
     def contribute_to_class(self, cls, name):
         from django.db import connection
         from django.db.backends.util import truncate_name
 
+        self.cls = cls
         cls._meta = self
         self.installed = re.sub('\.models$', '', cls.__module__) in settings.INSTALLED_APPS
         # First, construct the default values for these options.
         self.object_name = cls.__name__
         self.module_name = self.object_name.lower()
-        self.verbose_name = get_verbose_name(self.object_name)
+        self._verbose_name = CAMEL_CASE_RE.sub(' \\1', self.object_name).lower().strip()
 
         # Next, apply any overridden values from 'class Meta'.
         if self.meta:
@@ -80,6 +102,14 @@ class Options(object):
                 elif hasattr(self.meta, attr_name):
                     setattr(self, attr_name, getattr(self.meta, attr_name))
 
+            for attr_name in DEPRECATED_NAMES:
+                if attr_name in meta_attrs:
+                    warnings.warn("%(cls)s: Meta.%(attr_name)s is deprecated. Use a "
+                        "verbose_names() classmethod in the model "
+                        "instead." % {'cls': cls, 'attr_name': attr_name},
+                        PendingDeprecationWarning)
+                    setattr(self, '_%s' % attr_name, meta_attrs.pop(attr_name))
+
             # unique_together can be either a tuple of tuples, or a single
             # tuple of two strings. Normalize it to a tuple of tuples, so that
             # calling code can uniformly expect that.
@@ -90,14 +120,14 @@ class Options(object):
 
             # verbose_name_plural is a special case because it uses a 's'
             # by default.
-            if self.verbose_name_plural is None:
-                self.verbose_name_plural = string_concat(self.verbose_name, 's')
+            if self._verbose_name_plural is None:
+                self._verbose_name_plural = string_concat(self._verbose_name, 's')
 
             # Any leftover attributes must be invalid.
             if meta_attrs != {}:
                 raise TypeError("'class Meta' got invalid attribute(s): %s" % ','.join(meta_attrs.keys()))
         else:
-            self.verbose_name_plural = string_concat(self.verbose_name, 's')
+            self._verbose_name_plural = string_concat(self._verbose_name, 's')
         del self.meta
 
         # If the db_table wasn't provided, use the app_label + module_name.
@@ -199,10 +229,10 @@ class Options(object):
         """
         lang = get_language()
         deactivate_all()
-        raw = force_unicode(self.verbose_name)
+        raw = force_unicode(self._verbose_name)
         activate(lang)
         return raw
-    verbose_name_raw = property(verbose_name_raw)
+    verbose_name_raw = cached_property(verbose_name_raw)
 
     def _fields(self):
         """
@@ -495,3 +525,12 @@ class Options(object):
         Returns the index of the primary key field in the self.fields list.
         """
         return self.fields.index(self.pk)
+
+    def get_verbose_name(self, count=1):
+        if hasattr(self.cls, 'verbose_names'):
+            retv = self.cls.verbose_names(count)
+            if retv is not None:
+                return retv
+        if count == 1:
+            return CAMEL_CASE_RE.sub(' \\1', self.object_name).lower().strip()
+        return string_concat(self.get_verbose_name(1), 's')

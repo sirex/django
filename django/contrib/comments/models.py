@@ -5,8 +5,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.db import models
 from django.core import urlresolvers
-from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _, ungettext_lazy
 from django.conf import settings
 
 COMMENT_MAX_LENGTH = getattr(settings,'COMMENT_MAX_LENGTH',3000)
@@ -73,8 +73,6 @@ class Comment(BaseCommentAbstractModel):
         db_table = "django_comments"
         ordering = ('submit_date',)
         permissions = [("can_moderate", "Can moderate comments")]
-        verbose_name = _('comment')
-        verbose_name_plural = _('comments')
 
     def __unicode__(self):
         return "%s: %s..." % (self.name, self.comment[:50])
@@ -152,6 +150,10 @@ class Comment(BaseCommentAbstractModel):
         }
         return _('Posted by %(user)s at %(date)s\n\n%(comment)s\n\nhttp://%(domain)s%(url)s') % d
 
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('comment', 'comments', count)
+
 class CommentFlag(models.Model):
     """
     Records a flag on a comment. This is intentionally flexible; right now, a
@@ -178,8 +180,6 @@ class CommentFlag(models.Model):
     class Meta:
         db_table = 'django_comment_flags'
         unique_together = [('user', 'comment', 'flag')]
-        verbose_name = _('comment flag')
-        verbose_name_plural = _('comment flags')
 
     def __unicode__(self):
         return "%s flag of comment ID %s by %s" % \
@@ -189,3 +189,7 @@ class CommentFlag(models.Model):
         if self.flag_date is None:
             self.flag_date = timezone.now()
         super(CommentFlag, self).save(*args, **kwargs)
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('comment flag', 'comment flags', count)

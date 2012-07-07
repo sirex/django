@@ -20,14 +20,15 @@ def delete_selected(modeladmin, request, queryset):
 
     Next, it delets all selected objects and redirects back to the change list.
     """
-    opts = modeladmin.model._meta
+    model = modeladmin.model
+    opts = model._meta
     app_label = opts.app_label
 
     # Check that the user has delete permission for the actual model
     if not modeladmin.has_delete_permission(request):
         raise PermissionDenied
 
-    using = router.db_for_write(modeladmin.model)
+    using = router.db_for_write(model)
 
     # Populate deletable_objects, a data structure of all related objects that
     # will also be deleted.
@@ -46,15 +47,12 @@ def delete_selected(modeladmin, request, queryset):
                 modeladmin.log_deletion(request, obj, obj_display)
             queryset.delete()
             modeladmin.message_user(request, _("Successfully deleted %(count)d %(items)s.") % {
-                "count": n, "items": model_ngettext(modeladmin.opts, n)
+                "count": n, "items": model_ngettext(model, n)
             })
         # Return None to display the change list page again.
         return None
 
-    if len(queryset) == 1:
-        objects_name = force_unicode(opts.verbose_name)
-    else:
-        objects_name = force_unicode(opts.verbose_name_plural)
+    objects_name = force_unicode(opts.get_verbose_name(len(queryset)))
 
     if perms_needed or protected:
         title = _("Cannot delete %(name)s") % {"name": objects_name}
