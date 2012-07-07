@@ -15,3 +15,7 @@ class Company(models.Model):
 
     class Meta:
         verbose_name = _('Company')
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return _('Company')

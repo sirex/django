@@ -64,9 +64,10 @@ class Chapter(models.Model):
     def __unicode__(self):
         return self.title
 
-    class Meta:
+    @classmethod
+    def verbose_names(cls, count=1):
         # Use a utf-8 bytestring to ensure it works (see #11710)
-        verbose_name = '¿Chapter?'
+        return '¿Chapter?'
 
 
 class ChapterXtra1(models.Model):

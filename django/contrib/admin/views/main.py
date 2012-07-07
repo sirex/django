@@ -75,7 +75,7 @@ class ChangeList(object):
             title = ugettext('Select %s')
         else:
             title = ugettext('Select %s to change')
-        self.title = title % force_unicode(self.opts.verbose_name)
+        self.title = title % force_unicode(self.opts.get_verbose_name())
         self.pk_attname = self.lookup_opts.pk.attname
 
     def get_filters(self, request):

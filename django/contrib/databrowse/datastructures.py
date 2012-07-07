@@ -18,8 +18,8 @@ class EasyModel(object):
         self.site = site
         self.model = model
         self.model_list = site.registry.keys()
-        self.verbose_name = model._meta.verbose_name
-        self.verbose_name_plural = model._meta.verbose_name_plural
+        self.verbose_name = model._meta.get_verbose_name()
+        self.verbose_name_plural = model._meta.get_verbose_name(0)
 
     def __repr__(self):
         return '<EasyModel for %s>' % smart_str(self.model._meta.object_name)

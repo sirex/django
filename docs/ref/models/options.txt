@@ -265,6 +265,11 @@ Django quotes column and table names behind the scenes.
 
 .. attribute:: Options.verbose_name
 
+    .. deprecated:: 1.4
+        This option has been replaced by the :meth:`~Model.verbose_names` model
+        classmethod. Implement such method in your model to make Django aware
+        of its human readable name(s).
+
     A human-readable name for the object, singular::
 
         verbose_name = "pizza"
@@ -277,8 +282,72 @@ Django quotes column and table names behind the scenes.
 
 .. attribute:: Options.verbose_name_plural
 
+    .. deprecated:: 1.4
+        This option has been replaced by the :meth:`~Model.verbose_names` model
+        classmethod. Implement such method in your model to make Django aware
+        of its human readable name(s).
+
     The plural name for the object::
 
         verbose_name_plural = "stories"
 
     If this isn't given, Django will use :attr:`~Options.verbose_name` + ``"s"``.
+
+``Meta`` methods
+================
+
+``get_verbose_name``
+--------------------
+
+.. method:: Options.get_verbose_name(count=1)
+
+.. versionadded:: 1.4
+
+It provides an API to access translated and correctly pluralized verbose names
+of models (something that previously involved accessing the
+``Model._meta.verbose_name`` and ``Model._meta.verbose_name_plural``
+attributes.)
+
+.. seealso::
+
+    The :meth:`~Model.verbose_names` user-provided classmethod that works
+    together with this method.
+
+This method will always return a value independently of whether the model
+implements the :meth:`~Model.verbose_names` classmethod or not. Django provides
+fallback return values compatible with the default values of the deprecated
+:attr:`~Options.verbose_name` and :attr:`~Options.verbose_name_plural` options.
+
+For example, given this model::
+
+    class Door(models.Model):
+        height = models.PositiveIntegerField()
+
+then these are the return values of this method::
+
+    >>> Door._meta.get_verbose_name(1) # One door
+    >>> 'door' # Automatically provided singular verbose name
+    >>> Door._meta.get_verbose_name(3) # More than one door
+    >>> 'doors'
+    # Note how it returns an automatically provided simple naive pluralization
+    # appending a 's' to the singular value
+
+Or, for the examples in the :meth:`~Model.verbose_names` documentation::
+
+    >>> SSN._meta.get_verbose_name() # One SSN, count default value
+    >>> 'social security number'
+    # Note how it returns the value returned by SSN.verbose_names(count) for a
+    # value of count=1
+    >>> SSN._meta.get_verbose_name(0) # Zero SSN
+    >>> 'social security numbers'
+    # Note how it returns an automatically provided simple naive pluralization
+    # appending a 's' to the singular value
+
+    >>> SecurityPolicy._meta.get_verbose_name() # One policy
+    >>> 'security policy'
+    # Note how it returns a value automatically provided by Django by processing
+    # the model class name
+    >>> SecurityPolicy._meta.get_verbose_name(10) # Ten policies
+    >>> 'security policies'
+    # Note how it returns the value returned by
+    # SecurityPolicy.verbose_names(count) for a count value different from 1

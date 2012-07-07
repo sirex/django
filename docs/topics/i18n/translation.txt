@@ -168,11 +168,10 @@ pluralized messages.
 translation string and the number of objects.
 
 This function is useful when you need your Django application to be localizable
-to languages where the number and complexity of `plural forms
-<http://www.gnu.org/software/gettext/manual/gettext.html#Plural-forms>`_ is
-greater than the two forms used in English ('object' for the singular and
-'objects' for all the cases where ``count`` is different from one, irrespective
-of its value.)
+to languages where the number and complexity of `plural forms`_ is greater than
+the two forms as used in the English language (e.g. 'object' for the singular
+and 'objects' for all the cases where ``count`` is different from one,
+irrespective of its value.)
 
 For example::
 
@@ -187,18 +186,15 @@ For example::
         }
         return HttpResponse(page)
 
-In this example the number of objects is passed to the translation
-languages as the ``count`` variable.
+In this example the number of objects is passed to the translation functions as
+the ``count`` variable.
 
-Lets see a slightly more complex usage example::
+Lets see a slightly more complex example::
 
     from django.utils.translation import ungettext
 
     count = Report.objects.count()
-    if count == 1:
-        name = Report._meta.verbose_name
-    else:
-        name = Report._meta.verbose_name_plural
+    name = Report._meta.get_verbose_name(count)
 
     text = ungettext(
             'There is %(count)d %(name)s available.',
@@ -209,10 +205,12 @@ Lets see a slightly more complex usage example::
         'name': name
     }
 
-Here we reuse localizable, hopefully already translated literals (contained in
-the ``verbose_name`` and ``verbose_name_plural`` model ``Meta`` options) for
-other parts of the sentence so all of it is consistently based on the
-cardinality of the elements at play.
+Here we reuse localizable, potentially translated literals (as returned by the
+:meth:`django.db.models.Options.get_verbose_name` method) for other parts of the
+sentence so all of it is consistently based on the cardinality of the elements
+at play.
+
+.. _plural forms: http://www.gnu.org/software/gettext/manual/gettext.html#Plural-forms
 
 .. _pluralization-var-notes:
 
@@ -372,6 +370,65 @@ with the ``short_description`` attribute::
 Working with lazy translation objects
 -------------------------------------
 
+In addition to normal fields your models might also contain relationships:
+``ForeignKey``, ``ManyTomanyField`` or ``OneToOneField`` fields. You can mark
+the name of a relationship itself as translatable by using its ``verbose_name``
+option::
+
+    from django.utils.translation import ugettext_lazy as _
+
+    class MyThing(models.Model):
+        kind = models.ForeignKey(ThingKind, related_name='kinds',
+                                 verbose_name=_('kind'))
+
+Just like you would do in the :meth:`~django.db.models.Model.verbose_names`
+model classmethod, you should provide a lowercase verbose name text for the
+relation as Django will automatically titlecase it when required.
+
+Model verbose names values
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is recommended to always provide a
+:meth:`~django.db.models.Model.verbose_names` method rather than relying on
+Django's default English-centric and somewhat naïve determination of verbose
+names::
+
+    from django.utils.translation import ugettext_lazy
+
+    class MyThing(models.Model):
+        name = models.CharField(_('name'), help_text=ugettext_lazy('This is the help text'))
+
+        @classmethod
+        def verbose_names(cls, count=1):
+            if count == 1:
+                return ugettext_lazy('my thing')
+            else:
+                return ugettext_lazy('my things')
+
+In this particular case it is almost always a better idea to actually use
+:func:`~django.utils.translation.ungettext_lazy` instead of ``ugettext_lazy``.
+Refer to the ``verbose_names()`` documentation linked above for details on how
+this can make the lifes of your translators and users easier.
+
+Model methods ``short_description`` attribute values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For model methods, you can provide translations to Django and the admin site
+with the ``short_description`` parameter set on the corresponding method::
+
+    from django.utils.translation import ugettext_lazy as _
+
+    class MyThing(models.Model):
+        kind = models.ForeignKey(ThingKind, related_name='kinds',
+                                 verbose_name=_('kind'))
+
+        def is_mouse(self):
+            return self.kind.type == MOUSE_TYPE
+        is_mouse.short_description = _('Is it a mouse?')
+
+Notes on translation in models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 The result of a ``ugettext_lazy()`` call can be used wherever you would use a
 unicode string (an object with type ``unicode``) in Python. If you try to use
 it where a bytestring (a ``str`` object) is expected, things will not work as
@@ -397,6 +454,9 @@ If you don't like the long ``ugettext_lazy`` name, you can just alias it as
 
     class MyThing(models.Model):
         name = models.CharField(help_text=_('This is the help text'))
+
+Working with lazy translation objects
+-------------------------------------
 
 Using ``ugettext_lazy()`` and ``ungettext_lazy()`` to mark strings in models
 and utility functions is a common operation. When you're working with these

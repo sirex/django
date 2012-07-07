@@ -17,11 +17,11 @@ class Article(models.Model):
 
     class Meta:
         ordering = ('pub_date', 'headline')
-        # A utf-8 verbose name (Ångström's Articles) to test they are valid.
-        verbose_name = "\xc3\x85ngstr\xc3\xb6m's Articles"
 
-    def __unicode__(self):
-        return self.headline
+    @classmethod
+    def verbose_names(cls, count=1):
+        # An utf-8 verbose name (Ångström's Articles) to test they are valid.
+        return "\xc3\x85ngstr\xc3\xb6m's Articles"
 
 
 class Movie(models.Model):

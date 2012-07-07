@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, ungettext_lazy
 
 
 class SessionManager(models.Manager):
@@ -43,11 +43,13 @@ class Session(models.Model):
 
     class Meta:
         db_table = 'django_session'
-        verbose_name = _('session')
-        verbose_name_plural = _('sessions')
 
     def get_decoded(self):
         return SessionStore().decode(self.session_data)
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('session', 'sessions', count)
 
 
 # At bottom to avoid circular import

@@ -102,6 +102,10 @@ class ModelBase(type):
         for obj_name, obj in attrs.items():
             new_class.add_to_class(obj_name, obj)
 
+        if hasattr(new_class, 'verbose_names'):
+            new_class._meta._verbose_name = new_class._meta.get_verbose_name()
+            new_class._meta._verbose_name_plural = new_class._meta.get_verbose_name(0)
+
         # All the fields of any type declared on this model
         new_fields = new_class._meta.local_fields + \
                      new_class._meta.local_many_to_many + \
@@ -805,7 +809,7 @@ class Model(object):
 
     def unique_error_message(self, model_class, unique_check):
         opts = model_class._meta
-        model_name = capfirst(opts.verbose_name)
+        model_name = capfirst(opts.get_verbose_name())
 
         # A unique field
         if len(unique_check) == 1:

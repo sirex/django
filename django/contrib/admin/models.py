@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 from django.contrib.admin.util import quote
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, ungettext_lazy
 from django.utils.encoding import smart_unicode
 
 ADDITION = 1
@@ -28,8 +28,6 @@ class LogEntry(models.Model):
     objects = LogEntryManager()
 
     class Meta:
-        verbose_name = _('log entry')
-        verbose_name_plural = _('log entries')
         db_table = 'django_admin_log'
         ordering = ('-action_time',)
 
@@ -67,3 +65,7 @@ class LogEntry(models.Model):
         if self.content_type and self.object_id:
             return "%s/%s/%s/" % (self.content_type.app_label, self.content_type.model, quote(self.object_id))
         return None
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('log entry', 'log entries', count)

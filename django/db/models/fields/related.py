@@ -115,7 +115,7 @@ class RelatedField(object):
     def set_attributes_from_rel(self):
         self.name = self.name or (self.rel.to._meta.object_name.lower() + '_' + self.rel.to._meta.pk.name)
         if self.verbose_name is None:
-            self.verbose_name = self.rel.to._meta.verbose_name
+            self.verbose_name = self.rel.to._meta.get_verbose_name()
         self.rel.field_name = self.rel.field_name or self.rel.to._meta.pk.name
 
     def do_related_class(self, other, cls):
@@ -967,7 +967,7 @@ class ForeignKey(RelatedField, Field):
         qs = qs.complex_filter(self.rel.limit_choices_to)
         if not qs.exists():
             raise exceptions.ValidationError(self.error_messages['invalid'] % {
-                'model': self.rel.to._meta.verbose_name, 'pk': value})
+                'model': self.rel.to._meta.get_verbose_name(), 'pk': value})
 
     def get_attname(self):
         return '%s_id' % self.name
@@ -1079,6 +1079,12 @@ class OneToOneField(ForeignKey):
 def create_many_to_many_intermediary_model(field, klass):
     from django.db import models
     managed = True
+
+    def verbose_name_method(f, t):
+        def verbose_names(cls, count=1):
+            return '%(from)s-%(to)s relationship%(extra)s' % {'from': f, 'to': t, 'extra': 's' if count != 1 else ''}
+        return verbose_names
+
     if isinstance(field.rel.to, basestring) and field.rel.to != RECURSIVE_RELATIONSHIP_CONSTANT:
         to_model = field.rel.to
         to = to_model.split('.')[-1]
@@ -1107,15 +1113,14 @@ def create_many_to_many_intermediary_model(field, klass):
         'app_label': klass._meta.app_label,
         'db_tablespace': klass._meta.db_tablespace,
         'unique_together': (from_, to),
-        'verbose_name': '%(from)s-%(to)s relationship' % {'from': from_, 'to': to},
-        'verbose_name_plural': '%(from)s-%(to)s relationships' % {'from': from_, 'to': to},
     })
     # Construct and return the new class.
     return type(name, (models.Model,), {
         'Meta': meta,
         '__module__': klass.__module__,
         from_: models.ForeignKey(klass, related_name='%s+' % name, db_tablespace=field.db_tablespace),
-        to: models.ForeignKey(to_model, related_name='%s+' % name, db_tablespace=field.db_tablespace)
+        to: models.ForeignKey(to_model, related_name='%s+' % name, db_tablespace=field.db_tablespace),
+        'verbose_names': classmethod(verbose_name_method(from_, to)),
     })
 
 class ManyToManyField(RelatedField, Field):

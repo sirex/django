@@ -30,13 +30,15 @@ class SchoolClass(models.Model):
 # Until #13711 is fixed, this test can't be run under MySQL.
 if connection.features.supports_long_model_names:
     class VeryLongModelNameZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ(models.Model):
-        class Meta:
-            # We need to use a short actual table name or
-            # we hit issue #8548 which we're not testing!
-            verbose_name = 'model_with_long_table_name'
         primary_key_is_quite_long_zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz = models.AutoField(primary_key=True)
         charfield_is_quite_long_zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz = models.CharField(max_length=100)
         m2m_also_quite_long_zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz = models.ManyToManyField(Person,blank=True)
+
+        # We need to use a short actual verbose name or
+        # we hit issue #8548 which we're not testing!
+        @classmethod
+        def verbose_names(cls, count=1):
+            return 'model_with_long_table_name'
 
 
 class Tag(models.Model):

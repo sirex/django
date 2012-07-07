@@ -8,8 +8,8 @@ from django.db import models
 from django.db.models.manager import EmptyManager
 from django.utils.crypto import get_random_string
 from django.utils.encoding import smart_str
-from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _, ungettext_lazy
 
 from django.contrib import auth
 # UNUSABLE_PASSWORD is still imported here for backwards compatibility
@@ -71,8 +71,6 @@ class Permission(models.Model):
     objects = PermissionManager()
 
     class Meta:
-        verbose_name = _('permission')
-        verbose_name_plural = _('permissions')
         unique_together = (('content_type', 'codename'),)
         ordering = ('content_type__app_label', 'content_type__model',
                     'codename')
@@ -87,6 +85,10 @@ class Permission(models.Model):
         return (self.codename,) + self.content_type.natural_key()
     natural_key.dependencies = ['contenttypes.contenttype']
 
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('permission', 'permissions', count)
+
 
 class GroupManager(models.Manager):
     """
@@ -94,6 +96,7 @@ class GroupManager(models.Manager):
     """
     def get_by_natural_key(self, name):
         return self.get(name=name)
+
 
 class Group(models.Model):
     """
@@ -118,15 +121,15 @@ class Group(models.Model):
 
     objects = GroupManager()
 
-    class Meta:
-        verbose_name = _('group')
-        verbose_name_plural = _('groups')
-
     def __unicode__(self):
         return self.name
 
     def natural_key(self):
         return (self.name,)
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('group', 'groups', count)
 
 
 class UserManager(models.Manager):
@@ -255,10 +258,6 @@ class User(models.Model):
         verbose_name=_('user permissions'), blank=True,
         help_text='Specific permissions for this user.')
     objects = UserManager()
-
-    class Meta:
-        verbose_name = _('user')
-        verbose_name_plural = _('users')
 
     def __unicode__(self):
         return self.username
@@ -402,6 +401,10 @@ class User(models.Model):
             except (ImportError, ImproperlyConfigured):
                 raise SiteProfileNotAvailable
         return self._profile_cache
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('user', 'users', count)
 
 
 class AnonymousUser(object):

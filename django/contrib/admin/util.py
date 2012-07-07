@@ -121,16 +121,16 @@ def get_deleted_objects(objs, opts, user, admin_site, using):
             p = '%s.%s' % (opts.app_label,
                            opts.get_delete_permission())
             if not user.has_perm(p):
-                perms_needed.add(opts.verbose_name)
+                perms_needed.add(opts.get_verbose_name())
             # Display a link to the admin page.
             return format_html('{0}: <a href="{1}">{2}</a>',
-                               capfirst(opts.verbose_name),
+                               capfirst(opts.get_verbose_name()),
                                admin_url,
                                obj)
         else:
             # Don't display link to edit, because it either has no
             # admin or is edited inline.
-            return '%s: %s' % (capfirst(opts.verbose_name),
+            return '%s: %s' % (capfirst(opts.get_verbose_name()),
                                 force_unicode(obj))
 
     to_delete = collector.nested(format_callback)
@@ -196,7 +196,8 @@ def model_format_dict(obj):
     Return a `dict` with keys 'verbose_name' and 'verbose_name_plural',
     typically for use with string formatting.
 
-    `obj` may be a `Model` instance, `Model` subclass, or `QuerySet` instance.
+    `obj` may be a `Model` instance, `Model` subclass, a `QuerySet` instance, or
+    a `django.db.models.Options` instance.
 
     """
     if isinstance(obj, (models.Model, models.base.ModelBase)):
@@ -206,8 +207,8 @@ def model_format_dict(obj):
     else:
         opts = obj
     return {
-        'verbose_name': force_unicode(opts.verbose_name),
-        'verbose_name_plural': force_unicode(opts.verbose_name_plural)
+        'verbose_name': force_unicode(opts.get_verbose_name()),
+        'verbose_name_plural': force_unicode(opts.get_verbose_name(0))
     }
 
 
@@ -225,9 +226,12 @@ def model_ngettext(obj, n=None):
         if n is None:
             n = obj.count()
         obj = obj.model
-    d = model_format_dict(obj)
-    singular, plural = d["verbose_name"], d["verbose_name_plural"]
-    return ungettext(singular, plural, n or 0)
+    else:
+        if n is None:
+            n = 0
+    singular = obj._meta.get_verbose_name(1)
+    plural = obj._meta.get_verbose_name(n)
+    return ungettext(singular, plural, n)
 
 
 def lookup_field(name, obj, model_admin=None):
@@ -260,7 +264,7 @@ def lookup_field(name, obj, model_admin=None):
 def label_for_field(name, model, model_admin=None, return_attr=False):
     """
     Returns a sensible label for a field name. The name can be a callable or the
-    name of an object attributes, as well as a genuine fields. If return_attr is
+    name of an object attribute, as well as a genuine field. If return_attr is
     True, the resolved attribute (which could be a callable) is also returned.
     This will be None if (and only if) the name refers to a field.
     """
@@ -268,15 +272,15 @@ def label_for_field(name, model, model_admin=None, return_attr=False):
     try:
         field = model._meta.get_field_by_name(name)[0]
         if isinstance(field, RelatedObject):
-            label = field.opts.verbose_name
+            label = field.opts.get_verbose_name()
         else:
             label = field.verbose_name
     except models.FieldDoesNotExist:
         if name == "__unicode__":
-            label = force_unicode(model._meta.verbose_name)
+            label = force_unicode(model._meta.get_verbose_name())
             attr = unicode
         elif name == "__str__":
-            label = smart_str(model._meta.verbose_name)
+            label = smart_str(model._meta.get_verbose_name())
             attr = str
         else:
             if callable(name):
@@ -360,7 +364,7 @@ class NotRelationField(Exception):
 
 
 def get_model_from_relation(field):
-    if isinstance(field, models.related.RelatedObject):
+    if isinstance(field, RelatedObject):
         return field.model
     elif getattr(field, 'rel'): # or isinstance?
         return field.rel.to

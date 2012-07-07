@@ -26,11 +26,13 @@ class Employee(models.Model):
 class Business(models.Model):
     name = models.CharField(max_length=20, primary_key=True)
     employees = models.ManyToManyField(Employee)
-    class Meta:
-        verbose_name_plural = 'businesses'
 
     def __unicode__(self):
         return self.name
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return 'businesses'
 
 class Bar(models.Model):
     id = MyAutoField(primary_key=True, db_index=True)

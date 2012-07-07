@@ -365,7 +365,7 @@ class BaseDateListView(MultipleObjectMixin, DateMixin, View):
             is_empty = len(qs) == 0 if paginate_by is None else not qs.exists()
             if is_empty:
                 raise Http404(_("No %(verbose_name_plural)s available") % {
-                        'verbose_name_plural': force_unicode(qs.model._meta.verbose_name_plural)
+                        'verbose_name_plural': force_unicode(qs.model._meta.get_verbose_name(0))
                 })
 
         return qs
@@ -632,7 +632,7 @@ class BaseDateDetailView(YearMixin, MonthMixin, DayMixin, DateMixin, BaseDetailV
 
         if not self.get_allow_future() and date > datetime.date.today():
             raise Http404(_("Future %(verbose_name_plural)s not available because %(class_name)s.allow_future is False.") % {
-                'verbose_name_plural': qs.model._meta.verbose_name_plural,
+                'verbose_name_plural': qs.model._meta.get_verbose_name(0),
                 'class_name': self.__class__.__name__,
             })
 

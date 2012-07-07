@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, ungettext_lazy
 from django.utils.encoding import smart_unicode, force_unicode
 
 class ContentTypeManager(models.Manager):
@@ -129,8 +129,6 @@ class ContentType(models.Model):
     objects = ContentTypeManager()
 
     class Meta:
-        verbose_name = _('content type')
-        verbose_name_plural = _('content types')
         db_table = 'django_content_type'
         ordering = ('name',)
         unique_together = (('app_label', 'model'),)
@@ -147,7 +145,7 @@ class ContentType(models.Model):
         if not model or self.name != model._meta.verbose_name_raw:
             return self.name
         else:
-            return force_unicode(model._meta.verbose_name)
+            return force_unicode(model._meta.get_verbose_name())
 
     def model_class(self):
         "Returns the Python model class for this type of content."
@@ -172,3 +170,7 @@ class ContentType(models.Model):
 
     def natural_key(self):
         return (self.app_label, self.model)
+
+    @classmethod
+    def verbose_names(cls, count=1):
+        return ungettext_lazy('content type', 'content types', count)

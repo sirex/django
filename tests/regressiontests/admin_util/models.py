@@ -34,5 +34,6 @@ class Guest(models.Model):
     event = models.OneToOneField(Event)
     name = models.CharField(max_length=255)
 
-    class Meta:
-        verbose_name = "awesome guest"
+    @classmethod
+    def verbose_names(cls, count=1):
+        return "awesome guest"

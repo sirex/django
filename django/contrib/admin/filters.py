@@ -170,7 +170,7 @@ class RelatedFieldListFilter(FieldListFilter):
         if hasattr(field, 'verbose_name'):
             self.lookup_title = field.verbose_name
         else:
-            self.lookup_title = other_model._meta.verbose_name
+            self.lookup_title = other_model._meta.get_verbose_name()
         self.title = self.lookup_title
 
     def has_output(self):

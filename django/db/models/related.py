@@ -36,7 +36,7 @@ class RelatedObject(object):
                 {'%s__isnull' % self.parent_model._meta.module_name: False})
         lst = [(x._get_pk_val(), smart_unicode(x)) for x in queryset]
         return first_choice + lst
-        
+
     def get_db_prep_lookup(self, lookup_type, value, connection, prepared=False):
         # Defer to the actual field definition for db prep
         return self.field.get_db_prep_lookup(lookup_type, value,
@@ -67,3 +67,6 @@ class RelatedObject(object):
 
     def get_cache_name(self):
         return "_%s_cache" % self.get_accessor_name()
+
+    def get_verbose_name(self, count=1):
+        return self.model._meta.get_verbose_name(count)
